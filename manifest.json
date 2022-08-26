@@ -1,0 +1,32 @@
+{
+    "description": "IDN Homograph Attack Detector for Firefox",
+	"manifest_version": 2,
+	"name": "FxHomographDetector",
+	"version": "1.0",
+
+	"content_scripts": [
+		{
+            "run_at": "document_start",
+            "matches": ["<all_urls>"],
+            "match_about_blank": true,
+            "all_frames": true,
+            "js": [
+              "main.js"
+            ]
+		}
+	],
+
+    "permissions": [
+        "contextMenus",
+        "tabs",
+        "webNavigation",
+        "webRequest",
+        "webRequestBlocking",
+        "activeTab",
+        "<all_urls>"
+    ],
+
+    "background": {
+        "scripts": ["background.js"]
+      }
+}
