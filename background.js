@@ -7,7 +7,7 @@ function listener(details) {
     var decoder = new TextDecoder();
     let encoder = new TextEncoder();
     var str = decoder.decode(event.data, {stream: true});
-    if (/charset=Shift_JIS/.test(str)) {
+    if (/ ?charset=Shift_JIS"? ?\/?>?/gi.test(str)) {
       decoder = new TextDecoder("shift-jis");
       str = decoder.decode(event.data, {stream: true});
     }
@@ -30,12 +30,12 @@ function listener(details) {
         filter.write(encoder.encode("<p>This page has been blocked because it may be spoofing the website address.<br>このページは Fx Homograph Blocker によってブロックされました。</p>"));
         filter.disconnect();
         } else {
-          str = str.replace(/charset=Shift_JIS"? ?\/?>?/gi, 'charset=utf-8" />');
+          str = str.replace(/ ?charset=Shift_JIS"? ?\/?>?/gi, 'charset=utf-8" />');
           filter.write(encoder.encode(str));
           filter.disconnect();
         }
     } else {
-      str = str.replace(/charset=Shift_JIS"? ?\/?>?/gi, 'charset=utf-8" />');
+      str = str.replace(/ ?charset=Shift_JIS"? ?\/?>?/gi, 'charset=utf-8" />');
       filter.write(encoder.encode(str));
       filter.disconnect();
     }
