@@ -3,10 +3,14 @@ import('domains.js');
 
 function listener(details) {
   let filter = browser.webRequest.filterResponseData(details.requestId);
-  let decoder = new TextDecoder();
-  let encoder = new TextEncoder();
   filter.ondata = (event) => {
-    let str = decoder.decode(event.data, {stream: true});
+    var decoder = new TextDecoder();
+    let encoder = new TextEncoder();
+    var str = decoder.decode(event.data, {stream: true});
+    if (/charset=Shift_JIS/.test(str)) {
+      decoder = new TextDecoder("shift-jis");
+      str = decoder.decode(event.data, {stream: true});
+    }
     let url = new URL(details.url);
     let fqdn = url.hostname;
     let level = fqdn.split(".");
@@ -26,10 +30,12 @@ function listener(details) {
         filter.write(encoder.encode("<p>This page has been blocked because it may be spoofing the website address.<br>このページは Fx Homograph Blocker によってブロックされました。</p>"));
         filter.disconnect();
         } else {
+          str = str.replace(/charset=Shift_JIS"? ?\/?>?/gi, 'charset=utf-8" />');
           filter.write(encoder.encode(str));
           filter.disconnect();
         }
     } else {
+      str = str.replace(/charset=Shift_JIS"? ?\/?>?/gi, 'charset=utf-8" />');
       filter.write(encoder.encode(str));
       filter.disconnect();
     }
