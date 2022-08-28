@@ -1,0 +1,1 @@
+https://source.chromium.org/chromium/chromium/src/+/main:components/url_formatter/spoof_checks/top_domains/domains.list

@@ -7,7 +7,7 @@ function listener(details) {
     var decoder = new TextDecoder();
     let encoder = new TextEncoder();
     var str = decoder.decode(event.data, {stream: true});
-    if (/ ?charset=Shift_JIS"? ?\/?>?/gi.test(str)) {
+    if (/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig.test(str)) {
       decoder = new TextDecoder("shift-jis");
       str = decoder.decode(event.data, {stream: true});
     }
@@ -30,12 +30,12 @@ function listener(details) {
         filter.write(encoder.encode("<p>This page has been blocked because it may be spoofing the website address.<br>このページは Fx Homograph Blocker によってブロックされました。</p>"));
         filter.disconnect();
         } else {
-         // str = str.replace(/ ?charset=Shift_JIS"? ?\/?>?/gi, 'charset=utf-8" />');
+          str = str.replace(/charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
           filter.write(encoder.encode(str));
           filter.disconnect();
         }
     } else {
-     // str = str.replace(/ ?charset=Shift_JIS"? ?\/?>?/gi, 'charset=utf-8" />');
+      str = str.replace(/charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
       filter.write(encoder.encode(str));
       filter.disconnect();
     }
@@ -93,3 +93,22 @@ function GetHostnamesLists (domainnames) {
   const uniquehostnames = Array.from(new Set(hostnames));
   return uniquehostnames;
 }
+
+// Add the new header to the original array,
+// and return it.
+function UpdateContentType(e) {
+  const ContentType = {
+    name: "Content-Type",
+    value: "text/html; charset=utf-8"
+  };
+  e.responseHeaders.push(ContentType);
+  return { responseHeaders: e.responseHeaders };
+}
+
+// Listen for onHeaderReceived for the target page.
+// Set "blocking" and "responseHeaders".
+browser.webRequest.onHeadersReceived.addListener(
+  UpdateContentType,
+  {urls: ["<all_urls>"], types: ["main_frame"]},
+  ["blocking", "responseHeaders"]
+);
