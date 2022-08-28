@@ -1,7 +1,7 @@
 {
-    "description": "IDN Homograph Attack Detector for Firefox",
+    "description": "IDN Homograph Attack Block for Firefox",
 	"manifest_version": 2,
-	"name": "FxHomographDetector",
+	"name": "FxHomographBlocker",
 	"version": "1.0",
 
 	"content_scripts": [
@@ -33,7 +33,7 @@
       },
 
     "background": {
-        "scripts": ["background.js"],
+        "scripts": ["background.js", "punycode.js", "domains.js"],
         "persistent": false
       }
 }
