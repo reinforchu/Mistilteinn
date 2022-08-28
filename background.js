@@ -3,9 +3,10 @@ import('domains.js');
 
 function listener(details) {
   let filter = browser.webRequest.filterResponseData(details.requestId);
-  let decoder = new TextDecoder("utf-8");
+  let decoder = new TextDecoder();
   let encoder = new TextEncoder();
   filter.ondata = (event) => {
+    let str = decoder.decode(event.data, {stream: true});
     let url = new URL(details.url);
     let fqdn = url.hostname;
     let level = fqdn.split(".");
@@ -23,10 +24,12 @@ function listener(details) {
       if (verify >= 0) {
         let popup = OpenPupupWindow(); // window object retention
         filter.write(encoder.encode("<p>This page has been blocked because it may be spoofing the website address.<br>このページは Fx Homograph Blocker によってブロックされました。</p>"));
-        filter.disconnect();  
+        filter.disconnect();
+        } else {
+          filter.write(encoder.encode(str));
+          filter.disconnect();
         }
     } else {
-      let str = decoder.decode(event.data, {stream: true});
       filter.write(encoder.encode(str));
       filter.disconnect();
     }
@@ -51,14 +54,22 @@ function OpenPupupWindow () {
 }
 
 function HomographDetector (hostname) {
-  let result = 0;
+  let result = -1;
+  let allow = false;
   let hostnames = [...hostname];
   let hostanamepair = [];
   let reversehostname = "";
   let cyrillic = [ [ "a", "а" ], [ "e", "е" ], [ "o", "о" ], [ "r", "г" ], [ "p", "р" ], [ "k", "к" ], [ "s", "ѕ" ], [ "c", "с" ], [ "x", "х" ], [ "y", "у" ], [ "i", "і" ], [ "l", "ӏ" ], [ "h", "һ" ], [ "b", "Ь" ], [ "m", "м" ], [ "q", "ԛ" ], [ "w", "ԝ" ], [ "j", "ј" ], [ "f", "ғ" ], [ "t", "т" ], [ "u", "ч" ] ];
   hostnames.forEach(function (value, index) {
-    hostanamepair.push(cyrillic.find(element => element[1] === value)); // Key pair retention
+    if (cyrillic.find(element => element[1] === value) === undefined) {
+      allow = true;
+    } else {
+      hostanamepair.push(cyrillic.find(element => element[1] === value)); // Key pair retention
+    }
   });
+  if (allow) {
+    return result;
+  }
   hostanamepair.forEach(function (value, index) {
     reversehostname += value[0];
   });
