@@ -30,12 +30,12 @@ function listener(details) {
         filter.write(encoder.encode("<p>This page has been blocked because it may be spoofing the website address.<br>このページは Fx Homograph Blocker によってブロックされました。</p>"));
         filter.disconnect();
         } else {
-          str = str.replace(/charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
+          // str = str.replace(/charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
           filter.write(encoder.encode(str));
           filter.disconnect();
         }
     } else {
-      str = str.replace(/charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
+      // str = str.replace(/charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
       filter.write(encoder.encode(str));
       filter.disconnect();
     }
@@ -94,8 +94,6 @@ function GetHostnamesLists (domainnames) {
   return uniquehostnames;
 }
 
-// Add the new header to the original array,
-// and return it.
 function UpdateContentType(e) {
   const ContentType = {
     name: "Content-Type",
@@ -105,8 +103,6 @@ function UpdateContentType(e) {
   return { responseHeaders: e.responseHeaders };
 }
 
-// Listen for onHeaderReceived for the target page.
-// Set "blocking" and "responseHeaders".
 browser.webRequest.onHeadersReceived.addListener(
   UpdateContentType,
   {urls: ["<all_urls>"], types: ["main_frame"]},
