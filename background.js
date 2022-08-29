@@ -30,12 +30,10 @@ function listener(details) {
         filter.write(encoder.encode("<p>This page has been blocked because it may be spoofing the website address.<br>このページは Fx Homograph Blocker によってブロックされました。</p>"));
         filter.disconnect();
         } else {
-          // str = str.replace(/charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
           filter.write(encoder.encode(str));
           filter.disconnect();
         }
     } else {
-      // str = str.replace(/charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
       filter.write(encoder.encode(str));
       filter.disconnect();
     }
@@ -94,13 +92,13 @@ function GetHostnamesLists (domainnames) {
   return uniquehostnames;
 }
 
-function UpdateContentType(e) {
-  const ContentType = {
+function UpdateContentType(details) {
+  var ContentType = {
     name: "Content-Type",
     value: "text/html; charset=utf-8"
   };
-  e.responseHeaders.push(ContentType);
-  return { responseHeaders: e.responseHeaders };
+  details.responseHeaders.push(ContentType);
+  return { responseHeaders: details.responseHeaders };
 }
 
 browser.webRequest.onHeadersReceived.addListener(
