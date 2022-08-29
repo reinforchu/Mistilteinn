@@ -27,7 +27,7 @@
     ],
 
     "browser_action": {
-        "default_title": "Content script",
+        "default_title": "Fx Homograph Blocker",
         "default_popup": "popup.html",
         "browser_style": true
       },
