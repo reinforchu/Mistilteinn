@@ -11,15 +11,21 @@ function SteamChecker(details) {
         var decoder = new TextDecoder();
         let encoder = new TextEncoder();
         var str = decoder.decode(event.data, {stream: true});
-        if (/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig.test(str)) {
+        if (/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig.test(str)) { // Lang=ja_JP
           decoder = new TextDecoder("shift-jis");
           str = decoder.decode(event.data, {stream: true});
+          // str = str.replace(/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
+          let ContentType = {
+            name: "Content-Type",
+            value: "text/html; charset=utf-8"
+          };
+          details.responseHeaders.push(ContentType);
         }
         let url = new URL(details.url);
         let fqdn = url.hostname;
         let level = fqdn.split(".");
         let xncount = 0;
-        level.forEach(function (value, index) {
+        level.forEach(function (value, index) { // var index retention
           if (null === value.match(/^xn--/)) {
             ++xncount;
           }
@@ -34,22 +40,10 @@ function SteamChecker(details) {
             filter.write(encoder.encode("<p>This page has been blocked because it may be spoofing the website address.<br>このページは Fx Homograph Blocker によってブロックされました。</p>"));
             filter.disconnect();
             } else {
-              let ContentType = {
-                name: "Content-Type",
-                value: "text/html; charset=utf-8"
-              };
-              details.responseHeaders.push(ContentType);
-              // str = str.replace(/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
               filter.write(encoder.encode(str));
               filter.disconnect();
             }
         } else {
-          let ContentType = {
-            name: "Content-Type",
-            value: "text/html; charset=utf-8"
-          };
-          details.responseHeaders.push(ContentType);
-          // str = str.replace(/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
           filter.write(encoder.encode(str));
           filter.disconnect();
         }
@@ -76,8 +70,8 @@ function HomographDetector (hostname, fqdn) {
   let hostnames = [...hostname];
   let hostanamepair = [];
   let reversehostname = "";
-  // Cyrillic search
   let cyrillic = [ [ "a", "а" ], [ "e", "е" ], [ "o", "о" ], [ "r", "г" ], [ "p", "р" ], [ "k", "к" ], [ "s", "ѕ" ], [ "c", "с" ], [ "x", "х" ], [ "y", "у" ], [ "i", "і" ], [ "l", "ӏ" ], [ "h", "һ" ], [ "b", "Ь" ], [ "m", "м" ], [ "q", "ԛ" ], [ "w", "ԝ" ], [ "j", "ј" ], [ "f", "ғ" ], [ "t", "т" ], [ "u", "ч" ] ];
+  // Cyrillic search
   hostnames.forEach(function (value, index) {
     if (cyrillic.find(element => element[1] === value) === undefined) {
       allow = true;
@@ -91,11 +85,12 @@ function HomographDetector (hostname, fqdn) {
   hostanamepair.forEach(function (value, index) {
     reversehostname += value[0];
   });
+  // Search Chromium TOP 5000 Domains.list
   // let domainlists = GetHostnamesLists(domains);
   // result = domainlists.indexOf(reversehostname);
-  // If Exists URL
+  // If Exist URL search
   if (result === -1) {
-    let OriginalHostname = "http://";
+    let OriginalHostname = "https://";
     fqdn.forEach(function (value, index) {
       if (/^xn--/.test(value)) {
         OriginalHostname += value.replace(/^xn--[a-zA-Z0-9-].*/, reversehostname);
@@ -106,8 +101,8 @@ function HomographDetector (hostname, fqdn) {
       }
     });
     OriginalHostname = OriginalHostname.slice(0,-1)
-    if(CheckStatusCode(OriginalHostname) !== 404) {
-      result = 1;
+    if(CheckStatusCode(OriginalHostname) !== 0 || CheckStatusCode(OriginalHostname.replace("https://","http://")) !== 0) {
+      result = 0;
     }
   }
   return result;
@@ -126,7 +121,7 @@ function GetHostnamesLists (domainnames) {
 function CheckStatusCode(url){
   let xhr;
   xhr = new XMLHttpRequest();
-  xhr.open("GET", url, false);
+  xhr.open("HEAD", url, false);
   xhr.send(null);
   return xhr.status;
 }
