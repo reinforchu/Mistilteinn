@@ -1,5 +1,4 @@
 import("punycode.js");
-// import('domains.js');
 
 function SteamChecker(details) {
   for (var i = 0, j = details.responseHeaders.length; i < j; ++i) {
@@ -14,7 +13,6 @@ function SteamChecker(details) {
         if (/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig.test(str)) { // Lang=ja_JP
           decoder = new TextDecoder("shift-jis");
           str = decoder.decode(event.data, {stream: true});
-          // str = str.replace(/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig, "charset=utf-8\" />"); // Force change UTF-8
           let ContentType = {
             name: "Content-Type",
             value: "text/html; charset=utf-8"
@@ -85,9 +83,6 @@ function HomographDetector (hostname, fqdn) {
   hostanamepair.forEach(function (value, index) {
     reversehostname += value[0];
   });
-  // Search Chromium TOP 5000 Domains.list
-  // let domainlists = GetHostnamesLists(domains);
-  // result = domainlists.indexOf(reversehostname);
   // If Exist URL search
   if (result === -1) {
     let OriginalHostname = "https://";

@@ -3,19 +3,6 @@
 	"manifest_version": 2,
 	"name": "FxHomographBlocker",
 	"version": "1.0",
-
-	"content_scripts": [
-		{
-            "run_at": "document_start",
-            "matches": ["<all_urls>"],
-            "match_about_blank": true,
-            "all_frames": true,
-            "js": [
-              "main.js"
-            ]
-		}
-	],
-
     "permissions": [
         "contextMenus",
         "tabs",
@@ -25,15 +12,13 @@
         "activeTab",
         "<all_urls>"
     ],
-
     "browser_action": {
         "default_title": "Fx Homograph Blocker",
         "default_popup": "popup.html",
         "browser_style": true
       },
-
     "background": {
-        "scripts": ["background.js", "punycode.js", "domains.js"],
+        "scripts": ["background.js", "punycode.js"],
         "persistent": false
       }
 }
