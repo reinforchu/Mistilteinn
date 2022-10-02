@@ -1,13 +1,16 @@
-import("punycode.js");
+import("./punycode.js");
 
-function SteamChecker(details) {
+function StreamChecker(details) {
+  if (/^301|302|303|304|307|308$/ig.test(details.responseHeaders.statusCode)) {
+    return { responseHeaders: details.responseHeaders };
+  }
   for (var i = 0, j = details.responseHeaders.length; i < j; ++i) {
-    if (/^Content-Type$/ig.test(details.responseHeaders[i].name) && !/html/ig.test(details.responseHeaders[i].value)) {
+    if (/^Content-Type$/ig.test(details.responseHeaders[i].name) && !/html/ig.test(details.responseHeaders[i].value)) { // Issue: ignore anything other than text/html.
       return { responseHeaders: details.responseHeaders };
     }
   }
   let filter = browser.webRequest.filterResponseData(details.requestId);
-  var decoder = new TextDecoder("utf-8");
+  var decoder = new TextDecoder();
   const encoder = new TextEncoder();
   filter.ondata = (event) => {
     var str = decoder.decode(event.data, {stream: true});
@@ -15,24 +18,30 @@ function SteamChecker(details) {
       decoder = new TextDecoder("shift-jis");
       str = decoder.decode(event.data, {stream: true});
       let ContentType = { name: "Content-Type", value: "text/html; charset=utf-8" };
-      details.responseHeaders.push(ContentType);
-      str = str.replace(/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig, "charset=UTF-8\">");
+      for (var i = 0, j = details.responseHeaders.length; i < j; ++i) { // Does NOT working...
+        if (/^Content-Type$/ig.test(details.responseHeaders[i].name)) {
+          delete details.responseHeaders[i].name;
+          details.responseHeaders.pop();
+          details.responseHeaders.push(ContentType);
+        }
+      }
+      str = str.replace(/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig, "charset=UTF-8\">"); // Workaround
     }
     let url = new URL(details.url);
     let fqdn = url.hostname;
     let level = fqdn.split(".");
     let xncount = 0;
     level.forEach(function (value, index) { // var index retention
-      if (null === value.match(/^xn--/)) {
+      if (null !== value.match(/^xn--/)) {
         ++xncount;
       }
     });
-    if (xncount <= 1) {
+    if (xncount >= 1) {
       let domain = fqdn.match(/(xn--[A-Za-z0-9-]*)/)[1];
       let removeXn = domain.slice(4);
       let punydec = punycode.decode(removeXn);
       let verify = HomographDetector(punydec, level);
-      if (verify >= 0) {
+      if (verify >= 0 ) {
         let popup = OpenPupupWindow(); // window object retention
         filter.write(encoder.encode("<p>This page has been blocked because it may be spoofing the website address.<br>このページは Fx Homograph Blocker によってブロックされました。</p>"));
         filter.disconnect();
@@ -44,7 +53,6 @@ function SteamChecker(details) {
       filter.write(encoder.encode(str));
       filter.disconnect();
     }
-
   };
   return { responseHeaders: details.responseHeaders };
 }
@@ -93,34 +101,25 @@ function HomographDetector (hostname, fqdn) {
         OriginalHostname += ".";
       }
     });
-    OriginalHostname = OriginalHostname.slice(0,-1)
-    if(CheckStatusCode(OriginalHostname) !== 0 || CheckStatusCode(OriginalHostname.replace("https://","http://")) !== 0) {
-      result = 0;
+    OriginalHostname = OriginalHostname.slice(0, -1);
+    if(CheckStatusCode(OriginalHostname) !== 0 || CheckStatusCode(OriginalHostname.replace("https://", "http://")) !== 0) {
+     result = 0;
+     return result;
+    } else {
+      return result;
     }
   }
-  return result;
 }
 
-function GetHostnamesLists (domainnames) {
-  const domains = [];
-  const hostnames = [];
-  let lists = domainnames.split('\n');
-  lists.forEach(domain => domains.push(domain));
-  domains.forEach(host => hostnames.push(host.match(/([A-Za-z0-9-]*)/)[1]));
-  const uniquehostnames = Array.from(new Set(hostnames));
-  return uniquehostnames;
-}
-
-function CheckStatusCode (url){
-  let xhr;
-  xhr = new XMLHttpRequest();
-  xhr.open("HEAD", url, false);
+function CheckStatusCode (url) {
+  let xhr = new XMLHttpRequest();
+  xhr.open("GET", url + "/", false);
   xhr.send(null);
   return xhr.status;
 }
 
 browser.webRequest.onHeadersReceived.addListener(
-  SteamChecker,
+  StreamChecker,
   {urls: ["<all_urls>"], types: ["main_frame"]},
   ["blocking", "responseHeaders"]
 );
