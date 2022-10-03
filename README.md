@@ -1,4 +1,4 @@
-# Fx Homograph Blocker
- Extension for Firefox that block IDN homograph attack.
+# Fx IDN Homograph Attack Blocker
+ Firefox extension to block IDN homograph attacks.
   
  ![screenshot](screenshot.png "screenshot")
