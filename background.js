@@ -1,31 +1,15 @@
 import("./punycode.js");
 
 function StreamChecker(details) {
-  if (/^301|302|303|304|307|308$/ig.test(details.responseHeaders.statusCode)) {
-    return { responseHeaders: details.responseHeaders };
-  }
-  for (var i = 0, j = details.responseHeaders.length; i < j; ++i) {
-    if (/^Content-Type$/ig.test(details.responseHeaders[i].name) && !/html/ig.test(details.responseHeaders[i].value)) { // Issue: ignore anything other than text/html.
-      return { responseHeaders: details.responseHeaders };
-    }
-  }
   let filter = browser.webRequest.filterResponseData(details.requestId);
-  var decoder = new TextDecoder();
-  const encoder = new TextEncoder();
+  var decoder = new TextDecoder("utf-8");
+  let encoder = new TextEncoder();
   filter.ondata = (event) => {
     var str = decoder.decode(event.data, {stream: true});
     if (/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig.test(str)) { // Lang=ja_JP
       decoder = new TextDecoder("shift-jis");
       str = decoder.decode(event.data, {stream: true});
-      let ContentType = { name: "Content-Type", value: "text/html; charset=utf-8" };
-      for (var i = 0, j = details.responseHeaders.length; i < j; ++i) { // Does NOT working...
-        if (/^Content-Type$/ig.test(details.responseHeaders[i].name)) {
-          delete details.responseHeaders[i].name;
-          details.responseHeaders.pop();
-          details.responseHeaders.push(ContentType);
-        }
-      }
-      str = str.replace(/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig, "charset=UTF-8\">"); // Workaround
+     // str = str.replace(/(<meta )*charset=["']?Shift_JIS["']?.*?>/ig, "charset=UTF-8\">"); // Workaround
     }
     let url = new URL(details.url);
     let fqdn = url.hostname;
@@ -54,18 +38,7 @@ function StreamChecker(details) {
       filter.disconnect();
     }
   };
-  return { responseHeaders: details.responseHeaders };
-}
-
-function OpenPupupWindow () {
-  let createData = {
-    type: "detached_panel",
-    url: "alert.html",
-    width: 880,
-    height: 160
-  };
-  let creating = browser.windows.create(createData);
-  return creating;
+  return {};
 }
 
 function HomographDetector (hostname, fqdn) {
@@ -102,7 +75,7 @@ function HomographDetector (hostname, fqdn) {
       }
     });
     OriginalHostname = OriginalHostname.slice(0, -1);
-    if(CheckStatusCode(OriginalHostname) !== 0 || CheckStatusCode(OriginalHostname.replace("https://", "http://")) !== 0) {
+    if (CheckStatusCode(OriginalHostname) !== 0 || CheckStatusCode(OriginalHostname.replace("https://", "http://")) !== 0) {
      result = 0;
      return result;
     } else {
@@ -111,15 +84,47 @@ function HomographDetector (hostname, fqdn) {
   }
 }
 
-function CheckStatusCode (url) {
+function CheckStatusCode(url) {
   let xhr = new XMLHttpRequest();
   xhr.open("GET", url + "/", false);
   xhr.send(null);
   return xhr.status;
 }
 
-browser.webRequest.onHeadersReceived.addListener(
+function OpenPupupWindow() {
+  let createData = {
+    type: "detached_panel",
+    url: "alert.html",
+    width: 880,
+    height: 160
+  };
+  let creating = browser.windows.create(createData);
+  return creating;
+}
+
+function UpdateContentType(details) {
+  for (var i = 0, j = details.responseHeaders.length; i < j; ++i) {
+    if (/^Content-Type$/ig.test(details.responseHeaders[i].name) && !/html/ig.test(details.responseHeaders[i].value)) { // Issue: ignore anything other than text/html.    
+      // browser.webRequest.onBeforeRequest.removeListener(StreamChecker); // Issue: bindata broken.
+      return { responseHeaders: details.responseHeaders };
+    }
+  }
+  var ContentType = {
+    name: "Content-Type",
+    value: "text/html; charset=utf-8"
+  };
+  details.responseHeaders.push(ContentType);
+  return { responseHeaders: details.responseHeaders };
+}
+
+browser.webRequest.onBeforeRequest.addListener(
   StreamChecker,
+  {urls: ["<all_urls>"], types: ["main_frame"]},
+  ["blocking"]
+);
+
+browser.webRequest.onHeadersReceived.addListener(
+  UpdateContentType,
   {urls: ["<all_urls>"], types: ["main_frame"]},
   ["blocking", "responseHeaders"]
 );
