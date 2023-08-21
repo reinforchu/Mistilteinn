@@ -1,4 +1,4 @@
-# Fx IDN Homograph Attack Blocker
- Firefox extension to block IDN homograph attacks.
+# Mistilteinn
+ Firefox extension that block IDN Homograph Attack.
   
  ![screenshot](screenshot.png "screenshot")
